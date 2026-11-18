@@ -1,0 +1,74 @@
+name: Deploy GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Decode images and commit binaries if needed
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          files=(img/*.webp.b64)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "No encoded images to decode"
+            exit 0
+          fi
+          for f in "${files[@]}"; do
+            out="${f%.b64}"
+            base64 -d "$f" > "$out"
+            git rm -f "$f"
+            git add "$out"
+          done
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Add binary webp images for the prototype"
+          git push origin HEAD:main
+
+      - name: Enable GitHub Pages if needed
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api -X POST "repos/${{ github.repository }}/pages" -f build_type=workflow \
+            || gh api -X PUT "repos/${{ github.repository }}/pages" -f build_type=workflow \
+            || true
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Prepare site artifact
+        run: |
+          set -euo pipefail
+          mkdir -p _site/img
+          cp index.html README.md _site/
+          if [ -f .nojekyll ]; then cp .nojekyll _site/; fi
+          cp -r assets _site/
+          cp img/*.webp _site/img/
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
