@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Сосед-сан — суши-кухня юго-запада (прототип)</title>
+<meta name="description" content="Прототип сайта доставки суши. Аннино, Новоселье, Горелово, Красное Село.">
+<meta name="theme-color" content="#0b0b0d">
+<link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+<div class="proto-bar">Прототип для согласования · цены, зоны и сроки — примеры, уточнить с кухней</div>
+
+<header class="header" id="top">
+  <div class="wrap header__row">
+    <a href="#top" class="logo"><span class="logo__mark">隣</span><span class="logo__name" data-brand></span></a>
+    <button class="zone-chip" id="zoneChip" aria-label="Выбрать зону доставки">
+      <span class="dot"></span><span id="zoneChipText">Аннино · 40 мин</span>
+      <svg width="12" height="12" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round"/></svg>
+    </button>
+    <nav class="nav">
+      <a href="#menu">Меню</a><a href="#guarantee">Гарантия</a><a href="#zones">Зоны</a><a href="#reviews">Отзывы</a>
+    </nav>
+    <button class="cart-btn" id="cartBtn" aria-label="Корзина">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6h15l-1.5 9h-12z"/><path d="M6 6L5 3H2"/><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/></svg>
+      <span id="cartSum">0 ₽</span><span class="cart-btn__count" id="cartCount" hidden>0</span>
+    </button>
+  </div>
+</header>
+
+<main>
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero__media"><img src="img/hero.webp" alt="Сет роллов с лососем и запечёнными роллами" fetchpriority="high"></div>
+    <div class="wrap hero__content">
+      <p class="eyebrow">Суши-сосед для Аннино и Горелово</p>
+      <h1>Суши-кухня юго-запада: <span class="accent">в&nbsp;Аннино за&nbsp;40&nbsp;минут</span></h1>
+      <p class="hero__sub">Своя кухня рядом с вами. Заказ от&nbsp;700&nbsp;₽, честный вес на каждой карточке, соус, имбирь и васаби — бесплатно.</p>
+      <div class="hero__cta">
+        <a href="#menu" class="btn btn--primary">Выбрать роллы</a>
+        <button class="btn btn--ghost" data-open-zone>Проверить мой адрес</button>
+      </div>
+      <ul class="hero__facts">
+        <li><b>40 мин</b><span>или ролл в подарок*</span></li>
+        <li><b>от 700 ₽</b><span>минимальный заказ*</span></li>
+        <li><b>до 01:00</b><span>пт–сб**</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- BENEFITS -->
+  <section class="section wrap">
+    <div class="benefits">
+      <article class="benefit"><div class="benefit__icon">⏱</div><h3>40 минут в Аннино</h3><p>Опоздали в ближней зоне — ролл в подарок в следующий заказ.</p></article>
+      <article class="benefit"><div class="benefit__icon">⚖</div><h3>Честный вес</h3><p>Граммы и цена на каждой карточке. Филадельфия — от 250 г.</p></article>
+      <article class="benefit"><div class="benefit__icon">🏠</div><h3>Порог от 700 ₽</h3><p>Возим в посёлки, где другие берут заказы только от 2 000 ₽.</p></article>
+      <article class="benefit"><div class="benefit__icon">🥢</div><h3>Всё к роллам — бесплатно</h3><p>Соевый соус, имбирь, васаби и приборы в каждом заказе.</p></article>
+    </div>
+  </section>
+
+  <!-- POPULAR -->
+  <section class="section wrap" id="popular">
+    <div class="section__head"><h2>Популярное</h2><p class="muted">С чего обычно начинают соседи</p></div>
+    <div class="rail" id="popularRail"></div>
+  </section>
+
+  <!-- MENU -->
+  <section class="section wrap" id="menu">
+    <div class="section__head"><h2>Меню</h2><p class="muted">Цены и вес — примерные, финальные даст кухня</p></div>
+    <div class="tabs" id="tabs" role="tablist"></div>
+    <div class="grid" id="grid"></div>
+  </section>
+
+  <!-- GUARANTEE -->
+  <section class="section wrap" id="guarantee">
+    <div class="guarantee">
+      <div class="guarantee__media"><img src="img/set-half.webp" alt="Сет из половинок роллов" loading="lazy"></div>
+      <div class="guarantee__body">
+        <p class="eyebrow">Гарантия соседа</p>
+        <h2>40 минут — или ролл в подарок</h2>
+        <p>В ближней зоне (Аннино, Аннинские Высоты) привозим за 40 минут с момента подтверждения заказа. Если опоздали — дарим ролл в следующий заказ, промокод придёт в SMS.</p>
+        <ul class="ticks">
+          <li>Время считаем честно: в корзине видно, сколько ждать при текущей загрузке.</li>
+          <li>В пятницу вечером при перегрузе кухня временно ставит паузу, а не берёт заказ «на 2 часа».</li>
+          <li>Холодное и горячее пакуем раздельно.</li>
+        </ul>
+        <p class="note">* Условия гарантии и зона — пример, утвердить с кухней по реальному времени доставки.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ZONES -->
+  <section class="section wrap" id="zones">
+    <div class="section__head"><h2>Зоны доставки</h2><p class="muted">Все значения — <span class="tag tag--warn">пример, уточнить</span></p></div>
+    <div class="zones" id="zonesTable"></div>
+    <div class="night">
+      <div><b>🌙 Ночной слот: пт–сб до 01:00</b><p>Для поздних посиделок по выходным.</p></div>
+      <span class="tag tag--warn">если подтвердит кухня</span>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section class="section wrap">
+    <div class="section__head"><h2>Как проходит заказ</h2></div>
+    <ol class="flow">
+      <li><b>Выбираете и оплачиваете</b><span>Картой или по СБП на сайте — либо курьеру при получении.</span></li>
+      <li><b>Заказ сразу на кухне</b><span>Оплаченный онлайн заказ сразу появляется на экране кухни. Оплата курьеру — сначала короткий звонок менеджера.</span></li>
+      <li><b>Готовим</b><span>Повар отмечает «готово» — вы получаете SMS.</span></li>
+      <li><b>Курьер везёт</b><span>В ближней зоне — до 40 минут.</span></li>
+    </ol>
+  </section>
+
+  <!-- REVIEWS -->
+  <section class="section wrap" id="reviews">
+    <div class="section__head"><h2>Отзывы</h2></div>
+    <div class="empty-reviews">
+      <p class="empty-reviews__title">Отзывы появятся после запуска</p>
+      <p class="muted">Здесь будут настоящие отзывы гостей с Яндекс Карт и 2ГИС. Выдуманные отзывы в прототип не ставим.</p>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="wrap footer__grid">
+    <div>
+      <a href="#top" class="logo"><span class="logo__mark">隣</span><span class="logo__name" data-brand></span></a>
+      <p class="muted">Суши-кухня юго-запада Санкт-Петербурга.</p>
+    </div>
+    <div><h4>Кухня</h4><p>Адрес: [уточнить у клиента]<br>Часы работы: [уточнить]<br>Телефон: [уточнить]</p></div>
+    <div><h4>Оплата</h4><p>Картой и СБП на сайте, картой или наличными курьеру [что включено — уточнить]</p></div>
+    <div><h4>Реквизиты</h4><p>ИП [ФИО]<br>ИНН [—] · ОГРНИП [—]<br><a href="#">Публичная оферта</a> · <a href="#">Политика ПДн</a></p></div>
+  </div>
+  <div class="wrap footer__bottom muted">© <span data-year></span> <span data-brand></span>. Прототип — не публичная оферта. Фото сгенерированы для макета.</div>
+</footer>
+
+<!-- Sticky mobile cart bar -->
+<button class="cartbar" id="cartBar" hidden><span id="cartBarText">Корзина</span><b id="cartBarSum">0 ₽</b></button>
+
+<!-- Product modal -->
+<div class="modal" id="productModal" hidden>
+  <div class="modal__backdrop" data-close></div>
+  <div class="modal__panel modal__panel--product" role="dialog" aria-modal="true">
+    <button class="modal__close" data-close aria-label="Закрыть">×</button>
+    <div id="productBody"></div>
+  </div>
+</div>
+
+<!-- Zone modal -->
+<div class="modal" id="zoneModal" hidden>
+  <div class="modal__backdrop" data-close></div>
+  <div class="modal__panel" role="dialog" aria-modal="true">
+    <button class="modal__close" data-close aria-label="Закрыть">×</button>
+    <h3>Куда доставить?</h3>
+    <p class="muted small">В рабочей версии — ввод адреса с картой зон. В прототипе выберите посёлок.</p>
+    <div class="zone-list" id="zoneList"></div>
+  </div>
+</div>
+
+<!-- Cart drawer -->
+<div class="drawer" id="cartDrawer" hidden>
+  <div class="modal__backdrop" data-close></div>
+  <aside class="drawer__panel" role="dialog" aria-modal="true">
+    <div class="drawer__head"><h3 id="drawerTitle">Корзина</h3><button class="modal__close" data-close aria-label="Закрыть">×</button></div>
+    <div class="drawer__body" id="drawerBody"></div>
+    <div class="drawer__foot" id="drawerFoot"></div>
+  </aside>
+</div>
+
+<script src="assets/app.js"></script>
+</body>
+</html>
