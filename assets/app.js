@@ -3,16 +3,16 @@ const BRAND = 'Сосед-сан';
 /* ======================================================================= */
 
 /* Все цифры ниже — ПРИМЕР для прототипа, уточнить с кухней. */
-const ZONES = [
+let ZONES = [
   { id:'annino',   name:'Аннино, Аннинские Высоты', min:700, fee:0,   freeFrom:0,    time:'40 мин',    near:true },
   { id:'novosele', name:'Новоселье',                min:800, fee:150, freeFrom:1500, time:'40–60 мин', near:false },
   { id:'gorelovo', name:'Горелово, Новогорелово',   min:900, fee:200, freeFrom:2000, time:'60–75 мин', near:false },
   { id:'krasnoe',  name:'Красное Село',             min:900, fee:250, freeFrom:2500, time:'60–75 мин', near:false },
 ];
-const PROMOS = { ANNINO10:{ pct:10, label:'−10% на первый заказ (пример)' } };
+let PROMOS = { ANNINO10:{ pct:10, label:'−10% на первый заказ (пример)' } };
 
-const CATS = ['Сеты','Роллы','Запечённые','Горячие роллы','Суши','Напитки','Соусы'];
-const P = [
+let CATS = ['Сеты','Роллы','Запечённые','Горячие роллы','Суши','Напитки','Соусы'];
+let P = [
   {id:'set-sosed', cat:'Сеты', name:'Сет «Сосед» из половинок', img:'set-half', pcs:24, g:840, price:1590, hit:true,
    desc:'Попробовать всё и не переесть: по половинке Филадельфии, Унаги, запечённого с крабом и ролла с огурцом и кунжутом.',
    comp:'Лосось, угорь, снежный краб, сливочный сыр, огурец, авокадо, рис, нори, кунжут, соус унаги.'},
@@ -73,16 +73,47 @@ const weight = p => p.ml ? `${p.ml} мл` : `${p.g} г${p.pcs?` · ${p.pcs} шт
 const perKg = p => p.g && p.price && p.cat==='Сеты' ? `${rub(Math.round(p.price/p.g*1000))}/кг` : '';
 const esc = s => String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
+/* ---------- сервер заказов ---------- */
+const API = (window.SOSED_CONFIG||{}).API || '';
+let MSG = {telegram:'', whatsapp:'', max:''}, SERVER = {open:true, cash:true, mode:'proto'};
+async function api(action, data){
+  const r = data ? await fetch(API, {method:'POST', body: JSON.stringify(Object.assign({action}, data))})
+                 : await fetch(API + (API.includes('?')?'&':'?') + 'action=' + action);
+  return r.json();
+}
+async function apiGet(params){ const q=new URLSearchParams(params).toString(); const r=await fetch(API+(API.includes('?')?'&':'?')+q); return r.json(); }
+async function loadServerMenu(){
+  try{
+    const j = await api('menu');
+    if(!j.ok) throw new Error(j.error||'menu');
+    P = j.menu.filter(p=>p.available).map(p=>Object.assign({}, p, {img: p.img||'set-half'}));
+    ZONES = j.zones; MSG = j.messengers||MSG; SERVER = {open:j.open, cash:j.cash, mode:j.mode};
+    CATS = [...new Set(P.map(p=>p.cat))];
+    if(!CATS.includes(curCat)) curCat = CATS[0];
+    for(const id of Object.keys(S.cart)) if(!byId(id)) delete S.cart[id];
+    if(!ZONES.some(z=>z.id===S.zone) && ZONES[0]) S.zone = ZONES[0].id;
+    save(); renderTabs(); renderGrid(); renderPopular(); renderZones(); renderCartUI();
+    if(!SERVER.open) toast('Кухня сейчас на паузе — заказы не принимаются');
+  }catch(e){ console.warn('menu', e); toast('Меню не загрузилось — обновите страницу'); }
+}
+/* откуда пришёл клиент — для учёта рекламы */
+(function(){ try{
+  const u=new URLSearchParams(location.search), src=[u.get('utm_source'),u.get('utm_campaign'),u.get('promo')].filter(Boolean).join(' / ');
+  if(src || (document.referrer && !document.referrer.includes(location.host))) sessionStorage.setItem('sosed_src', src || document.referrer.slice(0,120));
+}catch(e){} })();
+const source = ()=>{ try{ return sessionStorage.getItem('sosed_src')||'прямой'; }catch(e){ return ''; } };
+
 const KEY='sosedsan_proto_v1';
-const S = Object.assign({cart:{}, zone:'annino', promo:'', step:'cart', pay:'online', when:'asap'}, JSON.parse(localStorage.getItem(KEY)||'{}'));
-const save = ()=>localStorage.setItem(KEY, JSON.stringify({cart:S.cart, zone:S.zone, promo:S.promo, pay:S.pay, when:S.when}));
+let saved={}; try{ saved=JSON.parse(localStorage.getItem(KEY)||'{}'); }catch(e){}
+const S = Object.assign({cart:{}, zone:'annino', promo:'', promoDisc:0, step:'cart', pay:'online', when:'asap'}, saved);
+const save = ()=>{ try{ localStorage.setItem(KEY, JSON.stringify({cart:S.cart, zone:S.zone, promo:S.promo, promoDisc:S.promoDisc, pay:S.pay, when:S.when})); }catch(e){} };
 const zone = ()=>ZONES.find(z=>z.id===S.zone)||ZONES[0];
 
 function totals(){
   let sub=0, n=0;
   for(const [id,q] of Object.entries(S.cart)){ const p=byId(id); if(!p) continue; sub+=p.price*q; n+=q; }
   const z=zone(), promo=PROMOS[S.promo];
-  const disc = promo ? Math.round(sub*promo.pct/100) : 0;
+  const disc = API ? Math.min(S.promoDisc||0, sub) : (promo ? Math.round(sub*promo.pct/100) : 0);
   const fee = sub===0 ? 0 : (z.freeFrom && sub>=z.freeFrom ? 0 : z.fee);
   return {sub, n, disc, fee, total: sub-disc+fee, left: Math.max(0, z.min-sub), z};
 }
@@ -139,6 +170,7 @@ function renderZones(){
 /* ---------- cart ---------- */
 function setQty(id, q){
   if(q<=0) delete S.cart[id]; else S.cart[id]=q;
+  if(API && S.promo){ S.promo=''; S.promoDisc=0; toast('Корзина изменилась — примените промокод ещё раз'); }
   save(); refreshCtrls(); renderCartUI();
   if(!$('#cartDrawer').hidden && S.step==='cart') renderDrawer();
   if(!$('#productModal').hidden) { const pid=$('#productBody').dataset.id; if(pid) $('#pmCtrl').innerHTML=pmCtrl(byId(pid)); }
@@ -177,7 +209,7 @@ function renderDrawer(){
         <p class="muted small" style="margin-top:8px">Ожидаемое время: <b style="color:var(--text)">${t.z.time}</b>${t.z.near?' · действует гарантия 40 минут':''} <span class="tag tag--warn">пример</span></p></div>
       <div class="box"><div class="box__t">Промокод</div>
         <div class="row"><input class="input" id="promoIn" placeholder="Например, ANNINO10" value="${esc(S.promo)}" autocapitalize="characters"><button class="btn btn--ghost btn--sm" id="promoBtn">${S.promo?'Убрать':'Применить'}</button></div>
-        ${S.promo?`<div class="promo-msg ok">✓ ${PROMOS[S.promo].label}</div>`:'<div class="promo-msg muted">У каждого ЖК и рекламного канала — свой промокод.</div>'}</div>`;
+        ${S.promo?`<div class="promo-msg ok">✓ ${esc(API ? (S.promoLabel||('Скидка '+rub(S.promoDisc||0))) : PROMOS[S.promo].label)}</div>`:'<div class="promo-msg muted">У каждого ЖК и рекламного канала — свой промокод.</div>'}</div>`;
     foot.innerHTML = minbar(t) + sumBlock(t) +
       `<button class="btn btn--primary btn--block" id="toCheckout" ${t.left?'disabled':''} style="margin-top:12px">${t.left?`Добавьте ещё на ${rub(t.left)}`:`Оформить · ${rub(t.total)}`}</button>`;
   }
@@ -190,16 +222,16 @@ function renderDrawer(){
         <div class="field"><label for="fPhone">Телефон</label><input class="input" id="fPhone" type="tel" autocomplete="tel" placeholder="+7 ___ ___-__-__"></div></div>
       <div class="box"><div class="box__t">Адрес · ${t.z.name}</div>
         <div class="field"><label for="fAddr">Улица, дом</label><input class="input" id="fAddr" autocomplete="street-address" placeholder="Например, ул. Садовая, 1"></div>
-        <div class="row"><input class="input" placeholder="Кв." aria-label="Квартира"><input class="input" placeholder="Подъезд" aria-label="Подъезд"><input class="input" placeholder="Этаж" aria-label="Этаж"></div></div>
+        <div class="row"><input class="input" id="fApt" placeholder="Кв." aria-label="Квартира"><input class="input" id="fEnt" placeholder="Подъезд" aria-label="Подъезд"><input class="input" id="fFloor" placeholder="Этаж" aria-label="Этаж"></div></div>
       <div class="box"><div class="box__t">Когда</div>
         <div class="seg"><button data-when="asap" aria-pressed="${S.when==='asap'}">Как можно скорее<small>${t.z.time}</small></button><button data-when="later" aria-pressed="${S.when==='later'}">Ко времени<small>выбрать слот</small></button></div>
-        ${S.when==='later'?`<select class="input" style="margin-top:10px">${['18:00–18:30','18:30–19:00','19:00–19:30','19:30–20:00','20:00–20:30','00:00–00:30 (пт–сб, если подтвердит кухня)'].map(s=>`<option>${s}</option>`).join('')}</select>`:''}</div>
+        ${S.when==='later'?`<select class="input" id="fSlot" style="margin-top:10px">${['18:00–18:30','18:30–19:00','19:00–19:30','19:30–20:00','20:00–20:30','00:00–00:30 (пт–сб, если подтвердит кухня)'].map(s=>`<option>${s}</option>`).join('')}</select>`:''}</div>
       <div class="box"><div class="box__t">Оплата</div>
-        <div class="seg"><button data-pay="online" aria-pressed="${S.pay==='online'}">Онлайн: карта / СБП<small>заказ сразу уходит на кухню</small></button><button data-pay="courier" aria-pressed="${S.pay==='courier'}">Курьеру<small>менеджер сначала подтвердит</small></button></div></div>
-      <div class="box"><div class="box__t">Комментарий</div><textarea class="input" placeholder="Домофон, без лука, позвонить заранее…"></textarea></div>
+        <div class="seg"><button data-pay="online" aria-pressed="${S.pay==='online'}">Онлайн: карта / СБП<small>заказ сразу уходит на кухню</small></button>${SERVER.cash?`<button data-pay="courier" aria-pressed="${S.pay==='courier'}">Курьеру<small>подтвердим в мессенджере</small></button>`:''}</div></div>
+      <div class="box"><div class="box__t">Комментарий</div><textarea class="input" id="fComment" placeholder="Домофон, без лука, позвонить заранее…"></textarea></div>
       <p class="muted small" style="margin-top:12px">Нажимая кнопку, вы соглашаетесь с офертой и политикой обработки персональных данных.</p>`;
     foot.innerHTML = sumBlock(t) + `<button class="btn btn--primary btn--block" id="placeOrder" style="margin-top:12px">${S.pay==='online'?`Оплатить ${rub(t.total)}`:`Заказать · ${rub(t.total)}`}</button>
-      <p class="note" style="text-align:center;margin-top:8px">Прототип: реальной оплаты нет</p>`;
+      ${API?'':'<p class="note" style="text-align:center;margin-top:8px">Прототип: реальной оплаты нет</p>'}`;
   }
 }
 function minbar(t){
@@ -212,7 +244,55 @@ function sumBlock(t){
     <div><span class="muted">Доставка</span><span>${t.fee?rub(t.fee):'бесплатно'}</span></div>
     <div class="total"><span>Итого</span><span>${rub(t.total)}</span></div></div>`;
 }
-function placeOrder(){
+function msgLinks(code){
+  const txt = encodeURIComponent(`Заказ ${code}`), out=[];
+  if(MSG.telegram){ const u=MSG.telegram; out.push(`<a class="btn btn--ghost btn--block" target="_blank" rel="noopener" href="${esc(/_bot\/?$/i.test(u)?u.replace(/\/$/,'')+'?start='+code:u)}">Telegram</a>`); }
+  if(MSG.whatsapp) out.push(`<a class="btn btn--ghost btn--block" target="_blank" rel="noopener" href="https://wa.me/${esc(MSG.whatsapp)}?text=${txt}">WhatsApp</a>`);
+  if(MSG.max) out.push(`<a class="btn btn--ghost btn--block" target="_blank" rel="noopener" href="${esc(MSG.max)}">Max</a>`);
+  return `<div class="box" style="text-align:left"><div class="box__t">Номер заказа: <b style="color:var(--accent2)">${code}</b>
+    <button class="btn btn--ghost btn--sm" data-copy="${code}" style="margin-left:6px">Скопировать</button></div>
+    <div style="display:grid;gap:8px;margin-top:10px">${out.join('')||'<p class="muted small">Мессенджеры подключим после запуска.</p>'}</div></div>`;
+}
+function showResult(code, st){
+  S.step='done';
+  const paid = ['НОВЫЙ','ГОТОВИТСЯ','ГОТОВ','У КУРЬЕРА','ДОСТАВЛЕН'].includes(st.status);
+  const cash = st.status==='НАЛИЧНЫЕ: ПОДТВЕРДИТЬ', wait = st.status==='ОЖИДАЕТ ОПЛАТЫ', bad = st.status==='ОТМЕНЁН';
+  $('#drawerTitle').textContent = paid?'Заказ принят':(cash?'Подтвердите заказ':(wait?'Проверяем оплату':'Заказ не оформлен'));
+  $('#drawerBody').innerHTML = `<div class="success"><div class="success__icon">${bad?'!':'✓'}</div>
+    <h3>${paid?`Заказ ${code} уже на кухне`:cash?`Заказ ${code} ждёт подтверждения`:wait?'Ждём ответ банка…':'Оплата не прошла'}</h3>
+    <p class="muted">${paid?`Оплачено ${rub(st.total)}${st.demo?' (демо)':''}. Статус меняется автоматически.`:
+      cash?'Нажмите кнопку мессенджера ниже и отправьте номер заказа — сразу после этого кухня начнёт готовить. Оплата курьеру.':
+      wait?'Обычно это несколько секунд. Не закрывайте страницу.':'Деньги не списаны. Можно попробовать ещё раз.'}</p>
+    ${paid||cash?msgLinks(code):''}</div>`;
+  $('#drawerFoot').innerHTML = bad?`<button class="btn btn--primary btn--block" id="retryOrder">Вернуться в корзину</button>`
+                                  :`<button class="btn btn--primary btn--block" id="newOrder">Вернуться в меню</button>`;
+  if(paid||cash){ S.cart={}; S.promo=''; S.promoDisc=0; save(); refreshCtrls(); renderCartUI(); }
+}
+async function pollStatus(code, tries=0){
+  try{ const st=await apiGet({action:'status', code}); if(!st.ok){ toast(st.error); return; }
+    showResult(code, st);
+    if(st.status==='ОЖИДАЕТ ОПЛАТЫ' && tries<40) setTimeout(()=>pollStatus(code,tries+1), 3000);
+  }catch(e){ if(tries<40) setTimeout(()=>pollStatus(code,tries+1), 4000); }
+}
+async function placeOrder(){
+  if(!API) return placeOrderProto();
+  const req=['#fName','#fPhone','#fAddr']; let ok=true;
+  req.forEach(s=>{ const el=$(s); const bad=!el.value.trim(); el.classList.toggle('err',bad); if(bad) ok=false; });
+  if(!ok){ toast('Заполните имя, телефон и адрес'); return; }
+  const btn=$('#placeOrder'); if(btn.disabled) return; btn.disabled=true; btn.textContent='Отправляем…';
+  const v=id=>($(id)||{}).value||'';
+  const body={ items:Object.entries(S.cart).map(([id,qty])=>({id,qty})), zone:S.zone, promo:S.promo,
+    pay: S.pay==='online'?'online':'cash', name:v('#fName'), phone:v('#fPhone'), address:v('#fAddr'),
+    apt:v('#fApt'), entrance:v('#fEnt'), floor:v('#fFloor'), when: S.when==='later'?v('#fSlot'):'как можно скорее',
+    comment:v('#fComment'), source:source() };
+  try{
+    const r=await api('create', body);
+    if(!r.ok){ toast(r.error||'Не получилось оформить'); btn.disabled=false; renderDrawer(); return; }
+    if(r.payUrl){ try{ sessionStorage.setItem('sosed_last', r.code); }catch(e){} location.href=r.payUrl; return; }
+    showResult(r.code, r);
+  }catch(e){ toast('Нет связи с сервером — проверьте интернет'); btn.disabled=false; btn.textContent='Повторить'; }
+}
+function placeOrderProto(){
   const req=['#fName','#fPhone','#fAddr']; let ok=true;
   req.forEach(s=>{ const el=$(s); const bad=!el.value.trim(); el.classList.toggle('err',bad); if(bad) ok=false; });
   if(!ok){ toast('Заполните имя, телефон и адрес'); return; }
@@ -262,7 +342,7 @@ function openCart(){ if(S.step==='done') S.step='cart'; renderDrawer(); openLaye
 
 /* ---------- events ---------- */
 document.addEventListener('click', e=>{
-  const t=e.target.closest('[data-add],[data-inc],[data-dec],[data-cat],[data-zone],[data-close],[data-open],[data-open-zone],[data-pay],[data-when],#cartBtn,#cartBar,#zoneChip,#toCheckout,#backCart,#placeOrder,#newOrder,#promoBtn');
+  const t=e.target.closest('[data-add],[data-inc],[data-dec],[data-cat],[data-zone],[data-close],[data-open],[data-open-zone],[data-pay],[data-when],#cartBtn,#cartBar,#zoneChip,#toCheckout,#backCart,#placeOrder,#newOrder,#promoBtn,#retryOrder,[data-copy]');
   if(!t) return;
   const d=t.dataset;
   if(d.add){ e.stopPropagation(); setQty(d.add,(S.cart[d.add]||0)+1); toast('Добавлено в корзину'); return; }
@@ -279,10 +359,16 @@ document.addEventListener('click', e=>{
   if(t.id==='toCheckout'){ S.step='checkout'; renderDrawer(); $('#drawerBody').scrollTop=0; return; }
   if(t.id==='backCart'){ S.step='cart'; renderDrawer(); return; }
   if(t.id==='placeOrder'){ placeOrder(); return; }
+  if(d.copy){ try{ navigator.clipboard.writeText(d.copy); toast('Номер скопирован'); }catch(err){ toast(d.copy); } return; }
+  if(t.id==='retryOrder'){ S.step='cart'; renderDrawer(); return; }
   if(t.id==='newOrder'){ S.step='cart'; closeLayer($('#cartDrawer')); location.hash='#menu'; return; }
   if(t.id==='promoBtn'){
-    if(S.promo){ S.promo=''; save(); renderDrawer(); return; }
+    if(S.promo){ S.promo=''; S.promoDisc=0; save(); renderDrawer(); return; }
     const code=$('#promoIn').value.trim().toUpperCase();
+    if(API){ if(!code) return; api('promo',{promo:code, sub:totals().sub}).then(r=>{
+        if(r.ok){ S.promo=r.code; S.promoDisc=r.disc; S.promoLabel=r.label||''; save(); renderDrawer(); toast('Промокод применён'); }
+        else { renderDrawer(); $('#promoIn').value=code; $('.promo-msg').className='promo-msg bad'; $('.promo-msg').textContent=r.error; }
+      }).catch(()=>toast('Нет связи с сервером')); return; }
     if(PROMOS[code]){ S.promo=code; save(); renderDrawer(); toast('Промокод применён'); }
     else { renderDrawer(); $('#promoIn').value=code; $('.promo-msg').className='promo-msg bad'; $('.promo-msg').textContent='Такого промокода нет. Попробуйте ANNINO10'; }
   }
@@ -295,3 +381,7 @@ function keepForm(fn){ const v={}; $$('#drawerBody input,#drawerBody textarea').
 renderTabs(); renderGrid(); renderPopular(); renderZones(); renderCartUI();
 // deep links for demos/screenshots: #cart, #checkout
 if(location.hash==='#cart') openCart();
+if(API){ loadServerMenu();
+  const oc=new URLSearchParams(location.search).get('order');
+  if(oc){ openLayer('#cartDrawer'); $('#drawerTitle').textContent='Проверяем оплату'; $('#drawerBody').innerHTML='<div class="empty">Секунду…</div>'; $('#drawerFoot').innerHTML=''; pollStatus(oc.toUpperCase()); }
+}

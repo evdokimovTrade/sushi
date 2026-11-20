@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Кухня — заказы</title>
+<style>
+:root{--bg:#0b0b0d;--card:#16161a;--line:#2a2a31;--text:#f4f1ea;--muted:#9a978f;--accent:#e2552d;--ok:#3ddc97;--warn:#f5b041;--bad:#ff5d5d}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:16px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+header{position:sticky;top:0;z-index:2;display:flex;gap:12px;align-items:center;justify-content:space-between;padding:12px 16px;background:#0b0b0de6;border-bottom:1px solid var(--line)}
+h1{font-size:18px;margin:0}.muted{color:var(--muted)}.small{font-size:13px}
+button{font:inherit;cursor:pointer;border:0;border-radius:10px;padding:12px 14px;font-weight:600}
+.cols{display:grid;gap:16px;padding:16px;grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
+.o{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.o.late{border-color:var(--bad)}.o.cash{border-color:var(--warn)}
+.top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}.code{font-weight:800;font-size:20px;letter-spacing:.5px}
+.timer{font-variant-numeric:tabular-nums;font-weight:800;font-size:22px}.timer.late{color:var(--bad)}.timer.soon{color:var(--warn)}
+.st{display:inline-block;font-size:12px;font-weight:700;padding:3px 8px;border-radius:999px;background:#ffffff12}
+ul{margin:0;padding-left:18px}li{margin:2px 0}li b{color:var(--accent)}
+.next{background:var(--accent);color:#fff;width:100%}.row{display:flex;gap:8px}.row button{flex:1}
+.ghost{background:#ffffff10;color:var(--text)}.okb{background:var(--ok);color:#0b0b0d}
+.empty{padding:60px 16px;text-align:center}
+#login{max-width:420px;margin:15vh auto;padding:16px}#login input{width:100%;padding:12px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--text);font:inherit;margin:10px 0}
+</style>
+</head>
+<body>
+<header><h1>Кухня</h1><span class="small muted" id="info">—</span><button class="ghost small" id="sound">🔔 Включить звук</button></header>
+<div id="login" hidden><h2>Вход для кухни</h2><p class="muted">Ключ кухни выдаёт владелец. Он хранится только на этом устройстве.</p>
+  <input id="key" type="password" autocomplete="off" placeholder="Ключ кухни"><button class="next" id="go">Войти</button></div>
+<main class="cols" id="list"></main>
+<script src="assets/config.js"></script>
+<script src="assets/kitchen.js"></script>
+</body>
+</html>
