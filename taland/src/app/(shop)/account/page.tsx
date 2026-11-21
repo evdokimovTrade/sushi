@@ -88,7 +88,7 @@ export default function AccountPage() {
               <div className="mini" key={address.id}>
                 <strong>{address.zoneName}</strong>
                 <span>{address.text}</span>
-                <button className="rm" type="button" onClick={() => removeAddress(address.id)}>Удалить</button>
+                <button className="rm" type="button" data-track="account_address_delete" onClick={() => removeAddress(address.id)}>Удалить</button>
               </div>
             ))}
           </div>
@@ -108,15 +108,15 @@ export default function AccountPage() {
                 ))}
                 <p><strong>{rub(order.total)}</strong> · {PAYMENT_LABEL[order.paymentMethod]}</p>
                 <div className="actions">
-                  <button className="btn btn--main" type="button" onClick={() => repeat(order)}>Повторить</button>
-                  <a className="btn btn--ghost" href={`/order/${order.id}`}>Открыть</a>
+                  <button className="btn btn--main" type="button" data-track="account_repeat_order" data-p-total={String(order.total)} onClick={() => repeat(order)}>Повторить</button>
+                  <a className="btn btn--ghost" href={`/order/${order.id}`} data-track="account_open_order">Открыть</a>
                 </div>
               </article>
             ))}
           </div>
         )}
         <div className="actions" style={{ marginTop: 12 }}>
-          <button className="btn btn--ghost" type="button" onClick={logout}>Выйти</button>
+          <button className="btn btn--ghost" type="button" data-track="account_logout" onClick={logout}>Выйти</button>
         </div>
       </section>
     </main>

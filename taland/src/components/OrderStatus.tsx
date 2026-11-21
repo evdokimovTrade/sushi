@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { rub, formatMoscow } from "@/lib/money";
 import { PAYMENT_LABEL, STATUS_LABEL } from "@/lib/statuses";
 import { formatPhone } from "@/lib/phone";
+import { ecommerce, once, track } from "@/lib/analytics";
 
 type Order = {
   id: string;
@@ -68,6 +69,26 @@ export function OrderStatus({ id, pay }: { id: string; pay?: boolean }) {
     setOrder(data.order);
   }
 
+  useEffect(() => {
+    if (!order) return;
+    const paidStatuses = ["kitchen", "ready", "courier", "delivered"];
+    if (order.paymentMethod === "online" && paidStatuses.includes(order.status)) {
+      // Деньги получены: цель и покупка в электронной коммерции — один раз на заказ.
+      once(`purchase_${order.id}`, () => {
+        track("purchase_paid", { order: order.number, promo: order.promoCode, zone: order.zoneName }, order.total);
+        ecommerce("purchase", order.lines.map((l, i) => ({ id: `${order.number}-${i}`, name: l.itemName, variant: l.variantName, price: Math.round(l.sum / l.qty), quantity: l.qty })),
+          { id: order.number, revenue: order.total, coupon: order.promoCode });
+      });
+    }
+    if (order.paymentMethod === "on_delivery" && order.status !== "cancelled") {
+      // Заказ с оплатой при получении — в покупки, как только он создан (подтверждение менеджера — в админке).
+      once(`purchase_cod_${order.id}`, () => {
+        ecommerce("purchase", order.lines.map((l, i) => ({ id: `${order.number}-${i}`, name: l.itemName, variant: l.variantName, price: Math.round(l.sum / l.qty), quantity: l.qty })),
+          { id: order.number, revenue: order.total, coupon: order.promoCode });
+      });
+    }
+  }, [order]);
+
   if (error && !order) return <div className="panel"><p className="form-error">{error}</p></div>;
   if (!order) return <div className="panel"><p className="empty">Загружаем заказ…</p></div>;
 
@@ -85,17 +106,17 @@ export function OrderStatus({ id, pay }: { id: string; pay?: boolean }) {
           {order.paymentMode === "mock" ? (
             <>
               <p className="price-note">Ключи ЮKassa не заданы. Это тестовое подтверждение: статус станет «на кухне», деньги не списываются. Когда в .env появятся тестовые shopId и секрет, кнопка уведёт на страницу ЮKassa.</p>
-              <button className="btn btn--main" type="button" disabled={pending} onClick={mockPay} data-testid="mock-pay">Подтвердить тестовую оплату</button>
+              <button className="btn btn--main" type="button" disabled={pending} onClick={mockPay} data-testid="mock-pay" data-track="payment_test_confirm" data-p-total={String(order.total)}>Подтвердить тестовую оплату</button>
             </>
           ) : (
             <>
               <p className="pay-note">Оплата картой или через СБП на стороне ЮKassa. После возврата статус обновится сам, вебхук тоже отметит заказ оплаченным.</p>
               {order.confirmationUrl ? (
-                <a className="btn btn--main" href={order.confirmationUrl}>Оплатить картой или СБП</a>
+                <a className="btn btn--main" href={order.confirmationUrl} data-track="payment_start" data-p-total={String(order.total)}>Оплатить картой или СБП</a>
               ) : (
                 <>
                   <p className="form-error">Ссылка на оплату ещё не создана. Проверьте ключи ЮKassa и повторите.</p>
-                  <button className="btn btn--main" type="button" disabled={pending} onClick={async () => {
+                  <button className="btn btn--main" type="button" data-track="payment_link_create" disabled={pending} onClick={async () => {
                     setPending(true);
                     const res = await fetch("/api/payments/create", {
                       method: "POST",
@@ -132,8 +153,8 @@ export function OrderStatus({ id, pay }: { id: string; pay?: boolean }) {
         {order.comment ? <><br />{order.comment}</> : null}
       </p>
       <div className="actions">
-        <a className="btn btn--ghost" href="/account">Кабинет</a>
-        <a className="btn btn--ghost" href="/">На главную</a>
+        <a className="btn btn--ghost" href="/account" data-track="order_to_account">Кабинет</a>
+        <a className="btn btn--ghost" href="/" data-track="order_to_home">На главную</a>
       </div>
     </div>
   );

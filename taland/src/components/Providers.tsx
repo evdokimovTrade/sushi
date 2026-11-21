@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { oncePerSession, track } from "@/lib/analytics";
 import type { CartLine, CategoryDTO, CustomerDraft, ItemDTO, ZoneDTO } from "@/lib/types";
 
 const CART_KEY = "taland_cart_v1";
@@ -156,9 +157,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
           if (!res.ok) {
             setDiscount(0);
             setPromoError(data.error || "Промокод не найден");
+            oncePerSession(`promo_bad_${code.toUpperCase()}`, () => track("promo_invalid", { code: code.slice(0, 40), reason: String(data.error || "").slice(0, 60) }));
           } else {
             setDiscount(data.discount || 0);
             setPromoError("");
+            oncePerSession(`promo_ok_${code.toUpperCase()}`, () => track("promo_applied", { code: code.slice(0, 40) }, data.discount || 0));
           }
         })
         .catch(() => setPromoError("Не удалось проверить промокод"));

@@ -6,6 +6,11 @@ COPY package.json package-lock.json ./
 COPY prisma ./prisma
 RUN npm ci --no-audit --no-fund
 COPY . .
+# Номера счётчиков вшиваются в сайт при сборке.
+ARG NEXT_PUBLIC_YM_ID=""
+ARG NEXT_PUBLIC_VK_PIXEL_ID=""
+ARG NEXT_PUBLIC_GA4_ID=""
+ENV NEXT_PUBLIC_YM_ID=$NEXT_PUBLIC_YM_ID NEXT_PUBLIC_VK_PIXEL_ID=$NEXT_PUBLIC_VK_PIXEL_ID NEXT_PUBLIC_GA4_ID=$NEXT_PUBLIC_GA4_ID
 RUN rm -f .env && npm run build
 ENV NODE_ENV=production
 VOLUME ["/app/data"]

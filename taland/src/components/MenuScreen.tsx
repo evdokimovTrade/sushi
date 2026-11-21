@@ -4,6 +4,7 @@ import { useState } from "react";
 import { rub } from "@/lib/money";
 import type { ItemDTO } from "@/lib/types";
 import { useCart } from "./Providers";
+import { ecommerce } from "@/lib/analytics";
 
 export function MenuScreen({ categoryId }: { categoryId: string }) {
   const { categories, menuReady, add, toast } = useCart();
@@ -38,6 +39,7 @@ export function MenuScreen({ categoryId }: { categoryId: string }) {
   function onAdd(item: ItemDTO) {
     const variant = item.variants.find((entry) => entry.id === chosen(item)) || item.variants[0];
     add(item.id, variant.id, count(item));
+    ecommerce("add", [{ id: `${item.id}:${variant.id}`, name: item.name, category: category?.fullName, variant: variant.name, price: variant.price, quantity: count(item) }]);
     const extra = !item.qtyOnly && item.variants.length > 1 ? `, ${variant.name}` : "";
     toast(`${item.name}${extra} — добавлено`);
   }
@@ -64,8 +66,8 @@ export function MenuScreen({ categoryId }: { categoryId: string }) {
                       <div className="row-card__name">{item.name}</div>
                       <div className="row-card__price">{rub(variant.price * q)}</div>
                       <div className="row-card__ops">
-                        <Qty value={q} onChange={(next) => setQty((prev) => ({ ...prev, [item.id]: next }))} />
-                        <button className="add" type="button" data-add={item.id} onClick={() => onAdd(item)}>В заказ</button>
+                        <Qty itemId={item.id} value={q} onChange={(next) => setQty((prev) => ({ ...prev, [item.id]: next }))} />
+                        <button className="add" type="button" data-add={item.id} data-track="add_to_cart" data-p-item={item.id} data-p-variant={variant.id} data-p-qty={String(q)} data-p-category={categoryId} onClick={() => onAdd(item)}>В заказ</button>
                       </div>
                     </article>
                   );
@@ -85,6 +87,9 @@ export function MenuScreen({ categoryId }: { categoryId: string }) {
                             className="var"
                             type="button"
                             aria-pressed={option.id === variant.id}
+                            data-track="menu_variant_select"
+                            data-p-item={item.id}
+                            data-p-variant={option.id}
                             onClick={() => setPick((prev) => ({ ...prev, [item.id]: option.id }))}
                           >
                             <span className="var__name">{option.name}</span>
@@ -95,8 +100,8 @@ export function MenuScreen({ categoryId }: { categoryId: string }) {
                     ) : null}
                     <div className="card__foot">
                       <div className="live">Цена: <b>{rub(variant.price * q)}</b></div>
-                      <Qty value={q} onChange={(next) => setQty((prev) => ({ ...prev, [item.id]: next }))} />
-                      <button className="add" type="button" data-add={item.id} onClick={() => onAdd(item)}>В заказ</button>
+                      <Qty itemId={item.id} value={q} onChange={(next) => setQty((prev) => ({ ...prev, [item.id]: next }))} />
+                      <button className="add" type="button" data-add={item.id} data-track="add_to_cart" data-p-item={item.id} data-p-variant={variant.id} data-p-qty={String(q)} data-p-category={categoryId} onClick={() => onAdd(item)}>В заказ</button>
                     </div>
                   </article>
                 );
@@ -109,12 +114,12 @@ export function MenuScreen({ categoryId }: { categoryId: string }) {
   );
 }
 
-function Qty({ value, onChange }: { value: number; onChange: (next: number) => void }) {
+function Qty({ itemId, value, onChange }: { itemId: string; value: number; onChange: (next: number) => void }) {
   return (
     <div className="qty">
-      <button type="button" aria-label="Меньше" onClick={() => onChange(Math.max(1, value - 1))}>−</button>
+      <button type="button" aria-label="Меньше" data-track="menu_qty_minus" data-p-item={itemId} onClick={() => onChange(Math.max(1, value - 1))}>−</button>
       <span>{value}</span>
-      <button type="button" aria-label="Больше" onClick={() => onChange(value + 1)}>+</button>
+      <button type="button" aria-label="Больше" data-track="menu_qty_plus" data-p-item={itemId} onClick={() => onChange(value + 1)}>+</button>
     </div>
   );
 }

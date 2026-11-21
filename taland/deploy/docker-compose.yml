@@ -1,7 +1,12 @@
 # ТаланД за traefik. Значения в ${...} берутся из deploy/.env на сервере (в git не кладётся).
 services:
   taland:
-    build: ..
+    build:
+      context: ..
+      args:
+        NEXT_PUBLIC_YM_ID: ${NEXT_PUBLIC_YM_ID:-}
+        NEXT_PUBLIC_VK_PIXEL_ID: ${NEXT_PUBLIC_VK_PIXEL_ID:-}
+        NEXT_PUBLIC_GA4_ID: ${NEXT_PUBLIC_GA4_ID:-}
     image: taland:latest
     container_name: taland
     restart: unless-stopped

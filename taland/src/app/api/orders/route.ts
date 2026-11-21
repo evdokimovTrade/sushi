@@ -16,6 +16,7 @@ export async function POST(request: Request) {
     paymentMethod?: "online" | "on_delivery";
     utmSource?: string;
     utmCampaign?: string;
+    attribution?: string;
     saveAddress?: boolean;
   } | null;
   if (!body) return fail("Пустой запрос");
@@ -32,6 +33,7 @@ export async function POST(request: Request) {
       paymentMethod: body.paymentMethod || "on_delivery",
       utmSource: body.utmSource || "",
       utmCampaign: body.utmCampaign || "",
+      attribution: typeof body.attribution === "string" ? body.attribution : "",
       saveAddress: Boolean(body.saveAddress),
       userId: session?.user?.id || null,
     });

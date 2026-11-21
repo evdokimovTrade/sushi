@@ -14,7 +14,7 @@ export function CartBar() {
   return (
     <div className="bar">
       <div>Итого: <b>{rub(quote.total)}</b></div>
-      <Link className="btn btn--main" href={quote.count ? "/checkout" : "/cart"}>Оформить</Link>
+      <Link className="btn btn--main" href={quote.count ? "/checkout" : "/cart"} data-track="cartbar_checkout" data-p-items={String(quote.count)} data-p-total={String(quote.total)}>Оформить</Link>
     </div>
   );
 }

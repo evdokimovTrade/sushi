@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { track } from "@/lib/analytics";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -46,6 +47,7 @@ export default function LoginPage() {
       setError(data.error || "Неверный код");
       return;
     }
+    track("login_success");
     router.push("/account");
     router.refresh();
   }
@@ -58,15 +60,15 @@ export default function LoginPage() {
         {error ? <p className="form-error">{error}</p> : null}
         {!sent ? (
           <form className="fields" onSubmit={requestCode}>
-            <label>Телефон<input value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="+7 …" type="tel" data-testid="login-phone" /></label>
-            <button className="btn btn--main" type="submit" disabled={pending}>Получить код</button>
+            <label>Телефон<input className="ym-hide-content" value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="+7 …" type="tel" data-testid="login-phone" data-field="login_phone" /></label>
+            <button className="btn btn--main" type="submit" disabled={pending} data-track="login_request_code">Получить код</button>
           </form>
         ) : (
           <form className="fields" onSubmit={verify}>
             {devCode ? <p>Тестовый код: <span className="dev-code" data-testid="dev-code">{devCode}</span></p> : <p>Код отправлен в SMS.</p>}
-            <label>Код<input value={code} onChange={(event) => setCode(event.target.value)} inputMode="numeric" placeholder="4 цифры" data-testid="login-code" /></label>
-            <button className="btn btn--main" type="submit" disabled={pending} data-testid="login-submit">Войти</button>
-            <button className="btn btn--ghost" type="button" onClick={() => { setSent(false); setDevCode(""); }}>Другой номер</button>
+            <label>Код<input className="ym-hide-content" value={code} onChange={(event) => setCode(event.target.value)} inputMode="numeric" placeholder="4 цифры" data-testid="login-code" /></label>
+            <button className="btn btn--main" type="submit" disabled={pending} data-testid="login-submit" data-track="login_submit">Войти</button>
+            <button className="btn btn--ghost" type="button" data-track="login_other_number" onClick={() => { setSent(false); setDevCode(""); }}>Другой номер</button>
           </form>
         )}
       </div>

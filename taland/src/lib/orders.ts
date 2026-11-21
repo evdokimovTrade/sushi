@@ -17,9 +17,21 @@ export type CreateOrderInput = {
   paymentMethod: "online" | "on_delivery";
   utmSource: string;
   utmCampaign: string;
+  attribution?: string;
   saveAddress: boolean;
   userId?: string | null;
 };
+
+/** Только валидный JSON-объект со строками, не длиннее 2000 символов. Остальное отбрасываем. */
+function safeAttribution(raw: string) {
+  try {
+    const parsed = JSON.parse(raw.slice(0, 4000));
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return "";
+    return JSON.stringify(parsed).slice(0, 2000);
+  } catch {
+    return "";
+  }
+}
 
 function clip(value: string, max: number) {
   return value.trim().slice(0, max);
@@ -152,6 +164,7 @@ export async function createOrder(input: CreateOrderInput) {
           status,
           utmSource: clip(input.utmSource, 80),
           utmCampaign: clip(input.utmCampaign, 80),
+          attribution: safeAttribution(input.attribution || ""),
           paymentMode: online ? mode : "",
           lines: { create: priced },
         },

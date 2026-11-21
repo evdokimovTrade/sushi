@@ -137,7 +137,8 @@ async function main() {
   const csv = await admin("/api/admin/orders/export");
   assert(csv.buf[0] === 0xef && csv.buf[1] === 0xbb && csv.buf[2] === 0xbf, "BOM");
   const header = csv.text.replace(/^\uFEFF/, "").split("\n")[0].trim();
-  assert(header === "дата;№;источник;промокод;позиции;сумма;оплата;статус", "Колонки CSV: " + header);
+  assert(header.startsWith("дата;№;источник;промокод;позиции;сумма;оплата;статус;"), "Колонки CSV: " + header);
+  assert(["utm_medium", "yclid", "gclid", "vk_click", "ym_client_id"].every((c) => header.split(";").includes(c)), "Колонки для офлайн-конверсий: " + header);
   assert(csv.text.includes("qr_auto / banner"), "Источник в CSV");
   assert(csv.text.includes("При получении"), "Оплата в CSV");
   assert(csv.text.includes("Ожидает подтверждения менеджера"), "Статус в CSV");

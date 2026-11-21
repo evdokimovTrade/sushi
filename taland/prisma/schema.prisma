@@ -133,6 +133,8 @@ model Order {
   status           String
   utmSource        String      @default("")
   utmCampaign      String      @default("")
+  /// JSON: первое и последнее касание (utm_*, yclid, gclid, rb_clickid), реферер, ClientID Метрики — для офлайн-конверсий
+  attribution      String      @default("")
   paymentMode      String      @default("")
   yookassaId       String      @default("")
   confirmationUrl  String      @default("")
