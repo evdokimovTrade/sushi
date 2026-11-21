@@ -1,0 +1,157 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String    @id @default(cuid())
+  phone     String    @unique
+  name      String    @default("")
+  createdAt DateTime  @default(now())
+  addresses Address[]
+  orders    Order[]
+  sessions  Session[]
+}
+
+model Address {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  zoneId    String
+  text      String
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model OtpCode {
+  id        String   @id @default(cuid())
+  phone     String
+  code      String
+  attempts  Int      @default(0)
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([phone, createdAt])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  role      String
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([role])
+}
+
+model Category {
+  id        String     @id
+  name      String
+  fullName  String
+  priceNote String     @default("")
+  sort      Int
+  items     MenuItem[]
+}
+
+model MenuItem {
+  id          String    @id
+  categoryId  String
+  category    Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  name        String
+  unit        String    @default("")
+  image       String    @default("")
+  section     String    @default("")
+  sectionName String    @default("")
+  layout      String    @default("card")
+  qtyOnly     Boolean   @default(false)
+  active      Boolean   @default(true)
+  sort        Int
+  variants    Variant[]
+
+  @@index([categoryId, sort])
+}
+
+model Variant {
+  id     String   @id
+  itemId String
+  item   MenuItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  name   String
+  price  Int
+  sort   Int
+  active Boolean  @default(true)
+
+  @@index([itemId, sort])
+}
+
+model PromoCode {
+  id        String    @id @default(cuid())
+  code      String    @unique
+  type      String
+  value     Int
+  minOrder  Int       @default(0)
+  active    Boolean   @default(true)
+  note      String    @default("")
+  expiresAt DateTime?
+}
+
+model DeliveryZone {
+  id       String  @id
+  name     String
+  minOrder Int
+  fee      Int
+  active   Boolean @default(true)
+  sort     Int
+}
+
+model Order {
+  id               String      @id @default(cuid())
+  number           String      @unique
+  createdAt        DateTime    @default(now())
+  userId           String?
+  user             User?       @relation(fields: [userId], references: [id])
+  name             String
+  phone            String
+  address          String
+  zoneId           String
+  zoneName         String
+  comment          String      @default("")
+  promoCode        String      @default("")
+  discount         Int         @default(0)
+  deliveryFee      Int         @default(0)
+  subtotal         Int
+  total            Int
+  paymentMethod    String
+  paymentStatus    String
+  status           String
+  utmSource        String      @default("")
+  utmCampaign      String      @default("")
+  paymentMode      String      @default("")
+  yookassaId       String      @default("")
+  confirmationUrl  String      @default("")
+  lines            OrderLine[]
+
+  @@index([status, createdAt])
+  @@index([phone])
+  @@index([createdAt])
+}
+
+model OrderLine {
+  id          String @id @default(cuid())
+  orderId     String
+  order       Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  itemId      String
+  itemName    String
+  variantId   String
+  variantName String
+  qty         Int
+  price       Int
+  sum         Int
+}
