@@ -1,0 +1,31 @@
+# ТаланД за traefik. Значения в ${...} берутся из deploy/.env на сервере (в git не кладётся).
+services:
+  taland:
+    build: ..
+    image: taland:latest
+    container_name: taland
+    restart: unless-stopped
+    env_file: ../.env
+    environment:
+      COOKIE_SECURE: "true"
+      PUBLIC_BASE_URL: "https://${TALAND_DOMAIN}"
+    volumes:
+      - taland-data:/app/data
+    networks: [proxy]
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=${TRAEFIK_NETWORK}
+      - traefik.http.routers.taland.rule=Host(`${TALAND_DOMAIN}`)
+      - traefik.http.routers.taland.entrypoints=${TRAEFIK_ENTRYPOINT}
+      - traefik.http.routers.taland.tls=true
+      - traefik.http.routers.taland.tls.certresolver=${TRAEFIK_CERTRESOLVER}
+      - traefik.http.services.taland.loadbalancer.server.port=3000
+      # Закрытый стенд: пароль на весь сайт, пока вход по коду на экране и оплата тестовая.
+      - traefik.http.routers.taland.middlewares=taland-auth
+      - traefik.http.middlewares.taland-auth.basicauth.users=${TALAND_BASIC_AUTH}
+volumes:
+  taland-data:
+networks:
+  proxy:
+    external: true
+    name: ${TRAEFIK_NETWORK}
