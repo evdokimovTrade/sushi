@@ -14,7 +14,7 @@ export function Header() {
   return (
     <header className="top">
       <Link className="top__logo" href="/" data-track="nav_logo">
-        <img src="/brand/taland-logo-dark.png" alt="ТаланД" />
+        <img src="/brand/taland-logo-header.webp" width={240} height={135} alt="ТаланД" />
       </Link>
       <nav className="top__nav" aria-label="Меню">
         {LINKS.map((link) => (

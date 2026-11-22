@@ -22,7 +22,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <div>
       <header className="admin-top">
         <div className="admin-top__row">
-          <img src="/brand/taland-logo-dark.png" alt="ТаланД" />
+          <img src="/brand/taland-logo-header.webp" width={240} height={135} alt="ТаланД" />
           <strong>Админка</strong>
           <button className="btn btn--ghost" type="button" style={{ marginLeft: "auto", flex: "0 0 auto" }} onClick={logout}>Выйти</button>
         </div>

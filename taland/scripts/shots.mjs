@@ -22,6 +22,8 @@ const browser = await puppeteer.launch({
 const page = await browser.newPage();
 if (headed) await page.setViewport({ width: 390, height: 820 });
 page.setDefaultTimeout(20000);
+// Эталонные кадры без баннера cookie: согласие ставим заранее.
+await page.evaluateOnNewDocument(() => { try { localStorage.setItem("taland_consent_v1", "all"); } catch {} });
 
 async function shot(name) {
   await page.evaluate(() => {

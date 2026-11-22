@@ -13,7 +13,7 @@ export function MenuScreen({ categoryId }: { categoryId: string }) {
   const [qty, setQty] = useState<Record<string, number>>({});
 
   if (!menuReady) {
-    return <main className="wrap"><p className="empty">Загружаем меню…</p></main>;
+    return <main className="wrap menu-loading"><p className="empty">Загружаем меню…</p></main>;
   }
   if (!category) {
     return <main className="wrap"><p className="empty">Раздел не найден.</p></main>;
@@ -29,6 +29,9 @@ export function MenuScreen({ categoryId }: { categoryId: string }) {
     }
     group.items.push(item);
   });
+
+  const withPhoto = category.items.filter((entry) => entry.image).map((entry) => entry.id);
+  const photoIndex = (id: string) => withPhoto.indexOf(id);
 
   function chosen(item: ItemDTO) {
     return pick[item.id] || item.variants[0].id;
@@ -74,7 +77,7 @@ export function MenuScreen({ categoryId }: { categoryId: string }) {
                 }
                 return (
                   <article className="card" key={item.id} data-item={item.id}>
-                    {item.image ? <img className="card__photo" src={item.image} alt={item.name} /> : null}
+                    {item.image ? <img className="card__photo" src={item.image} alt={item.name} width={800} height={500} loading={photoIndex(item.id) > 1 ? "lazy" : "eager"} decoding="async" /> : null}
                     <div className="card__head">
                       <div className="card__name">{item.name}</div>
                       {item.unit ? <div className="card__unit">{item.unit}</div> : null}

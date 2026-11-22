@@ -4,7 +4,7 @@ export default function HomePage() {
   return (
     <main className="wrap">
       <section className="hero">
-        <img className="hero__logo" src="/brand/taland-logo-dark.png" width={1200} height={675} alt="ТаланД" />
+        <img className="hero__logo" src="/brand/taland-logo-hero.webp" width={720} height={405} alt="ТаланД" fetchPriority="high" />
         <h1>Вкусно из разных стран — с доставкой по юго-западу Петербурга</h1>
         <p className="hero__sub">Просто вкусно</p>
         <div className="badges">
@@ -16,15 +16,15 @@ export default function HomePage() {
       </section>
       <div className="cat-grid" id="cats">
         <Link className="cat-card" href="/sushi" data-track="home_card_sushi">
-          <img src="/img/philadelphia.webp" alt="" />
+          <img src="/img/philadelphia.webp" width={800} height={500} alt="" />
           <span className="cat-card__label">Суши</span>
         </Link>
         <Link className="cat-card" href="/grill" data-track="home_card_grill">
-          <img src="/img/shashlyk.webp" alt="" />
+          <img src="/img/shashlyk.webp" width={800} height={500} alt="" loading="lazy" decoding="async" />
           <span className="cat-card__label">Шашлык и люля</span>
         </Link>
         <Link className="cat-card" href="/burgers" data-track="home_card_burgers">
-          <img src="/img/burger.webp" alt="" />
+          <img src="/img/burger.webp" width={800} height={500} alt="" loading="lazy" decoding="async" />
           <span className="cat-card__label">Бургеры</span>
         </Link>
       </div>

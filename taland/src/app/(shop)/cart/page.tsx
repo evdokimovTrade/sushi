@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { CartPanel } from "@/components/CartPanel";
 
-export const metadata: Metadata = { title: "Корзина" };
+export const metadata: Metadata = { robots: { index: false }, title: "Корзина" };
 
 export default function Page() {
   return (

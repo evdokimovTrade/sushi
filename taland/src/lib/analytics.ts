@@ -7,6 +7,8 @@
  * Полный список целей — METRICS.md.
  */
 
+import { analyticsAllowed } from "./consent";
+
 export const YM_ID = Number(process.env.NEXT_PUBLIC_YM_ID || 0) || 0;
 export const VK_ID = process.env.NEXT_PUBLIC_VK_PIXEL_ID || "";
 export const GA4_ID = process.env.NEXT_PUBLIC_GA4_ID || "";
@@ -116,7 +118,9 @@ export function track(goal: string, params?: Params, value?: number) {
     log.push([goal, p || {}, value ?? null]);
     sessionStorage.setItem("taland_metrics_log", JSON.stringify(log.slice(-300)));
   } catch { /* */ }
-  if (debug()) console.info("[metrics]", goal, p || "", value ?? "");
+  if (debug()) console.info("[metrics]", goal, p || "", value ?? "", analyticsAllowed() ? "" : "(нет согласия — не отправлено)");
+  // Без согласия на аналитику — только локальный журнал (для проверки), ни счётчиков, ни копии на сервер.
+  if (!analyticsAllowed()) return;
   toServer(goal, p, value);
   try {
     if (YM_ID && win.ym) win.ym(YM_ID, "reachGoal", goal, value !== undefined ? { ...p, order_price: value, currency: "RUB" } : p);
@@ -132,7 +136,7 @@ export function track(goal: string, params?: Params, value?: number) {
 /** Электронная коммерция Метрики (dataLayer) + аналог GA4. action: detail | add | remove | purchase. */
 export function ecommerce(action: "detail" | "add" | "remove" | "purchase", products: EcomProduct[], order?: { id: string; revenue: number; coupon?: string }) {
   const win = w();
-  if (!win || !products.length) return;
+  if (!win || !products.length || !analyticsAllowed()) return;
   const payload: Record<string, unknown> = { products };
   if (action === "purchase" && order) payload.actionField = { id: order.id, revenue: order.revenue, coupon: order.coupon || undefined };
   (win.dataLayer = win.dataLayer || []).push({ ecommerce: { currencyCode: "RUB", [action]: payload } });
@@ -154,7 +158,7 @@ export function ecommerce(action: "detail" | "add" | "remove" | "purchase", prod
 
 export function pageView(url: string) {
   const win = w();
-  if (!win) return;
+  if (!win || !analyticsAllowed()) return;
   toServer("page_view", undefined);
   try { if (YM_ID && win.ym) win.ym(YM_ID, "hit", url, { referer: document.referrer }); } catch { /* */ }
   try { if (VK_ID) (win._tmr = win._tmr || []).push({ id: VK_ID, type: "pageView", start: Date.now() }); } catch { /* */ }

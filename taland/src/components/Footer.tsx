@@ -1,3 +1,5 @@
+import { CookieSettingsLink } from "./CookieSettingsLink";
+
 export function Footer() {
   return (
     <footer className="foot">
@@ -11,6 +13,7 @@ export function Footer() {
         <a href="/legal/privacy" data-track="footer_privacy">Персональные данные</a>
         <a href="/legal/delivery" data-track="footer_delivery">Доставка и возврат</a>
         <a href="/admin" data-track="footer_staff">Сотрудникам</a>
+        <CookieSettingsLink />
       </p>
     </footer>
   );

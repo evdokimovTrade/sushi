@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { GA4_ID, VK_ID, YM_ID, captureAttribution, pageView, track } from "@/lib/analytics";
+import { analyticsAllowed, onConsent } from "@/lib/consent";
 
 type Win = Window & { ym?: (...a: unknown[]) => void; dataLayer?: unknown[]; gtag?: (...a: unknown[]) => void };
 
@@ -58,7 +59,11 @@ export function Analytics() {
   useEffect(() => {
     if (staff) return;
     captureAttribution();
-    loadCounters();
+    // Счётчики грузятся только после «Принять» в баннере cookie.
+    if (analyticsAllowed()) loadCounters();
+    const offConsent = onConsent((value) => {
+      if (value === "all") { loadCounters(); pageView(window.location.href); }
+    });
     // Каждый клик по кнопке или ссылке: своё имя цели из data-track, остальное — общая цель ui_click с подписью.
     const onClick = (event: MouseEvent) => {
       const el = (event.target as Element | null)?.closest?.(CLICKABLE);
@@ -92,6 +97,7 @@ export function Analytics() {
       document.removeEventListener("click", onClick, true);
       document.removeEventListener("change", onChange, true);
       document.removeEventListener("focusin", onFocus, true);
+      offConsent();
     };
   }, [staff]);
 

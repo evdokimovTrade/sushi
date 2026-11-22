@@ -30,7 +30,7 @@ export default function AdminLogin() {
   return (
     <main className="wrap">
       <div className="panel" style={{ maxWidth: 420, margin: "40px auto" }}>
-        <img src="/brand/taland-logo-dark.png" alt="ТаланД" style={{ height: 72, margin: "0 auto 12px" }} />
+        <img src="/brand/taland-logo-hero.webp" width={720} height={405} alt="ТаланД" style={{ height: 72, margin: "0 auto 12px" }} />
         <h2>Вход для сотрудников</h2>
         {error ? <p className="form-error">{error}</p> : null}
         <form className="fields" onSubmit={submit}>
