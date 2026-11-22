@@ -157,3 +157,33 @@ model OrderLine {
   price       Int
   sum         Int
 }
+
+/// Клик или событие на сайте (каждая кнопка). Копия уходит в Google Таблицу через SheetOutbox.
+model SiteEvent {
+  id       String   @id @default(cuid())
+  at       DateTime @default(now())
+  session  String
+  goal     String
+  page     String   @default("")
+  label    String   @default("")
+  params   String   @default("")
+  value    Int?
+  source   String   @default("")
+  campaign String   @default("")
+
+  @@index([at])
+  @@index([goal, at])
+}
+
+/// Очередь в Google Таблицу: заказы и пачки событий. Не отправилось — повторим, ничего не теряется.
+model SheetOutbox {
+  id        String    @id @default(cuid())
+  createdAt DateTime  @default(now())
+  kind      String
+  payload   String
+  sentAt    DateTime?
+  attempts  Int       @default(0)
+  lastError String    @default("")
+
+  @@index([sentAt, createdAt])
+}

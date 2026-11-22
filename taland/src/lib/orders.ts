@@ -3,6 +3,7 @@ import { prisma } from "./prisma";
 import { normalizePhone } from "./phone";
 import { calcDiscount } from "./pricing";
 import { paymentMode, createYookassaPayment } from "./yookassa";
+import { enqueueOrder } from "./sheets";
 
 export type IncomingLine = { itemId: string; variantId: string; qty: number };
 
@@ -225,6 +226,7 @@ export async function createOrder(input: CreateOrderInput) {
   }
 
   const fresh = await prisma.order.findUnique({ where: { id: order.id }, include: { lines: true } });
+  await enqueueOrder(order.id, "created");
   return { order: fresh!, confirmationUrl, paymentMode: online ? mode : "none" };
 }
 
@@ -239,6 +241,7 @@ export async function markOrderPaid(orderId: string) {
         status: order.status === "awaiting_payment" ? "kitchen" : order.status,
       },
     });
+    await enqueueOrder(order.id, "paid");
   }
   return prisma.order.findUnique({ where: { id: orderId }, include: { lines: true } });
 }

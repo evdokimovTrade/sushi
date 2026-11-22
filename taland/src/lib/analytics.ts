@@ -44,6 +44,65 @@ function debug() {
   }
 }
 
+/* ---------- копия каждого события на сервер сайта → база → Google Таблица ---------- */
+
+type Queued = { goal: string; page: string; label: string; params?: Params; value?: number; t: number };
+let queue: Queued[] = [];
+let timer: ReturnType<typeof setTimeout> | null = null;
+let hooked = false;
+
+function sessionId() {
+  try {
+    let id = sessionStorage.getItem("taland_sid");
+    if (!id) {
+      id = Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
+      sessionStorage.setItem("taland_sid", id);
+    }
+    return id;
+  } catch {
+    return "nosession";
+  }
+}
+
+function lastTouch() {
+  try {
+    const a = JSON.parse(localStorage.getItem(ATTR_KEY) || "{}");
+    const t = a.last || a.first || {};
+    return { source: t.utm_source || (a.referrer ? "referral" : ""), campaign: t.utm_campaign || "" };
+  } catch {
+    return { source: "", campaign: "" };
+  }
+}
+
+function sendQueue(beacon: boolean) {
+  if (timer) { clearTimeout(timer); timer = null; }
+  if (!queue.length) return;
+  const batch = queue.splice(0, 50);
+  const body = JSON.stringify({ session: sessionId(), ...lastTouch(), events: batch });
+  try {
+    if (beacon && navigator.sendBeacon) navigator.sendBeacon("/api/events", new Blob([body], { type: "application/json" }));
+    else void fetch("/api/events", { method: "POST", headers: { "Content-Type": "application/json" }, body, keepalive: true }).catch(() => undefined);
+  } catch { /* событие для таблицы потеряно — счётчики его уже получили */ }
+  if (queue.length) sendQueue(beacon);
+}
+
+function toServer(goal: string, p: Params | undefined, value?: number) {
+  const win = w();
+  if (!win || win.location.pathname.startsWith("/admin")) return;
+  const label = typeof p?.label === "string" ? p.label : "";
+  const params: Params | undefined = p ? { ...p } : undefined;
+  if (params) { delete params.label; delete params.page; }
+  queue.push({ goal, page: win.location.pathname, label, params, value, t: Date.now() });
+  if (!hooked) {
+    hooked = true;
+    win.addEventListener("pagehide", () => sendQueue(true));
+    document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") sendQueue(true); });
+  }
+  // Заказ и оплата — сразу; остальное — пачкой раз в 3 секунды.
+  if (/^(order_|purchase|payment_)/.test(goal)) sendQueue(false);
+  else if (!timer) timer = setTimeout(() => sendQueue(false), 3000);
+}
+
 /** Цель во все подключённые счётчики. value — деньги в рублях (для заказа и корзины). */
 export function track(goal: string, params?: Params, value?: number) {
   const win = w();
@@ -58,6 +117,7 @@ export function track(goal: string, params?: Params, value?: number) {
     sessionStorage.setItem("taland_metrics_log", JSON.stringify(log.slice(-300)));
   } catch { /* */ }
   if (debug()) console.info("[metrics]", goal, p || "", value ?? "");
+  toServer(goal, p, value);
   try {
     if (YM_ID && win.ym) win.ym(YM_ID, "reachGoal", goal, value !== undefined ? { ...p, order_price: value, currency: "RUB" } : p);
   } catch { /* счётчик не должен ломать сайт */ }
@@ -95,6 +155,7 @@ export function ecommerce(action: "detail" | "add" | "remove" | "purchase", prod
 export function pageView(url: string) {
   const win = w();
   if (!win) return;
+  toServer("page_view", undefined);
   try { if (YM_ID && win.ym) win.ym(YM_ID, "hit", url, { referer: document.referrer }); } catch { /* */ }
   try { if (VK_ID) (win._tmr = win._tmr || []).push({ id: VK_ID, type: "pageView", start: Date.now() }); } catch { /* */ }
   try { if (GA4_ID && win.gtag) win.gtag("event", "page_view", { page_location: url }); } catch { /* */ }

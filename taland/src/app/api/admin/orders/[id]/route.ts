@@ -3,6 +3,7 @@ import { fail, ok } from "@/lib/http";
 import { requireAdmin } from "@/lib/auth";
 import { NEXT_STATUS } from "@/lib/statuses";
 import { orderPublic } from "@/lib/orders";
+import { enqueueOrder } from "@/lib/sheets";
 
 export const dynamic = "force-dynamic";
 
@@ -20,5 +21,6 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
     data: { status: next },
     include: { lines: true },
   });
+  await enqueueOrder(id, "status");
   return ok({ order: orderPublic(updated) });
 }

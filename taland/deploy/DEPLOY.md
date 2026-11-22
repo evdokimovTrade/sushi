@@ -19,12 +19,14 @@
    - `AUTH_MODE=dev` и `ALLOW_MOCK_PAYMENTS=true` оставить: стенд закрыт паролем, денег нет;
    - ключи ЮKassa пустые, пока владелец не даст тестовые.
 4. `cd deploy && cp .env.example .env`: заполнить `TALAND_DOMAIN`, сеть, entrypoint и certresolver из шага 2. `TALAND_BASIC_AUTH` сгенерировать командой из комментария; пароль вводит владелец.
+   - Google Таблица: `SHEETS_WEBHOOK_URL` и `SHEETS_SECRET` из `sheets/README.md`. Пустые — заказы и клики копятся в базе и уйдут в таблицу, когда их впишут.
 5. `docker compose -f deploy/docker-compose.yml --env-file deploy/.env up -d --build` (из папки `taland`).
 6. Проверка:
    - `docker logs taland` — строки «Меню записано» и запуск next;
    - `curl -u taland:ПАРОЛЬ https://ДОМЕН/api/health` → 200;
    - без пароля → 401;
-   - `docker ps` — openclaw и traefik работают как прежде.
+   - `docker ps` — openclaw и traefik работают как прежде;
+   - `/api/health` → `sheets.pending` не растёт (очередь в Google Таблицу уходит).
 7. В `docs/STATE.md` репозитория ets1-orchestrator записать: домен, где лежит код, как обновлять, где данные (том `taland-data`). Пароли не писать.
 
 ## Обновление
